@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roda Keputusan</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        #wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+        #wheel {
+            width: 100%;
+            height: 100%;
+            transition: transform 4s ease-out; 
+        }
+        #pointer {
+            position: absolute;
+            left: 50%;
+            top: -10px;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #e74c3c;
+            z-index: 10;
+        }
+        textarea {
+            width: 90%;
+            height: 60px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Roda Keputusan</h1>
+        <p>Bingung? Masukkan pilihanmu di bawah (pisahkan dengan koma), lalu putar rodanya!</p>
+        
+        <textarea id="options-input" placeholder="cth: Pizza, Sate, Nasi Goreng"></textarea>
+        
+        <div id="wheel-container">
+            <div id="pointer"></div>
+            <canvas id="wheel" width="300" height="300"></canvas>
+        </div>
+
+        <button id="spin-button">Putar!</button>
+        <h2 id="result"></h2>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const spinButton = document.getElementById('spin-button');
+        const optionsInput = document.getElementById('options-input');
+        const resultEl = document.getElementById('result');
+
+        let currentRotation = 0; 
+        let options = [];
+
+        const colors = ["#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#9b59b6", "#1abc9c"];
+
+        function drawWheel() {
+            const numOptions = options.length;
+            const arcSize = numOptions > 0 ? (2 * Math.PI) / numOptions : 0;
+            
+            ctx.clearRect(0, 0, 300, 300);
+            ctx.font = '16px sans-serif';
+
+            for (let i = 0; i < numOptions; i++) {
+                const angle = i * arcSize;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(150, 150);
+                ctx.arc(150, 150, 150, angle, angle + arcSize);
+                ctx.lineTo(150, 150);
+                ctx.fill();
+
+                ctx.save();
+                ctx.fillStyle = 'white';
+                ctx.translate(150 + Math.cos(angle + arcSize / 2) * 100, 150 + Math.sin(angle + arcSize / 2) * 100);
+                ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
+                ctx.fillText(options[i], -ctx.measureText(options[i]).width / 2, 0);
+                ctx.restore();
+            }
+        }
+
+        function updateOptions() {
+            const inputVal = optionsInput.value.trim();
+            options = inputVal ? inputVal.split(',').map(item => item.trim()) : [];
+            
+            canvas.style.transition = 'none';
+            canvas.style.transform = 'rotate(0deg)';
+            currentRotation = 0;
+            setTimeout(() => {
+                canvas.style.transition = 'transform 4s ease-out';
+            }, 10);
+
+            drawWheel();
+        }
+
+        spinButton.addEventListener('click', () => {
+            if (options.length < 2) {
+                resultEl.textContent = "Masukkan minimal 2 pilihan!";
+                return;
+            }
+            
+            spinButton.disabled = true;
+            resultEl.textContent = "...";
+     
+            const segmentAngle = 360 / options.length;
+            const landingSegment = Math.floor(Math.random() * options.length);
+            const middleOfSegment = (landingSegment * segmentAngle) + (segmentAngle / 2);
+
+            const currentAngle = currentRotation % 360;
+            const rotationToAdd = (360 * 5) - currentAngle + (270 - middleOfSegment);
+
+            currentRotation += rotationToAdd;
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                resultEl.textContent = `Pilihannya: ${options[landingSegment]}`;
+                spinButton.disabled = false;
+            }, 4100);
+        });
+
+        optionsInput.addEventListener('input', updateOptions);
+        updateOptions();
+    </script>
+
+</body>
+</html>
