@@ -1,154 +1,172 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roda Keputusan</title>
+    <title>Generator Kartu Nama Live</title>
     <style>
         body {
-            font-family: sans-serif;
-            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            min-height: 95vh;
         }
+
         .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            width: 100%;
+            max-width: 950px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .form-panel,
+        .preview-panel {
+            flex: 1 1 300px;
+        }
+
+
+        h1 {
             text-align: center;
-            width: 100%;
-            max-width: 500px;
+            margin-bottom: 20px;
         }
-        #wheel-container {
+
+        .grup-input {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+      
+        #card-preview {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
+            overflow: hidden;
         }
-        #wheel {
-            width: 100%;
-            height: 100%;
-            transition: transform 4s ease-out; 
-        }
-        #pointer {
+
+        #card-preview::before {
+            content: '';
             position: absolute;
-            left: 50%;
-            top: -10px;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid #e74c3c;
-            z-index: 10;
+            top: -50px;
+            left: -50px;
+            width: 150px;
+            height: 150px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
         }
-        textarea {
-            width: 90%;
-            height: 60px;
+
+        #card-name {
+            font-size: 1.8em;
+            font-weight: bold;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin-top: 10px;
+
+        #card-title {
+            font-size: 1.1em;
+            font-style: italic;
+            opacity: 0.9;
+        }
+
+        #card-contact {
+            text-align: right;
+            font-size: 0.9em;
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
-        <h1>Roda Keputusan</h1>
-        <p>Bingung? Masukkan pilihanmu di bawah (pisahkan dengan koma), lalu putar rodanya!</p>
-        
-        <textarea id="options-input" placeholder="cth: Pizza, Sate, Nasi Goreng"></textarea>
-        
-        <div id="wheel-container">
-            <div id="pointer"></div>
-            <canvas id="wheel" width="300" height="300"></canvas>
+        <div class="form-panel">
+            <h1>Input Data</h1>
+            <div class="grup-input">
+                <label for="input-name">Nama Lengkap</label>
+                <input type="text" id="input-name" placeholder="cth: Budi Sanjaya" maxlength="20">
+            </div>
+            <div class="grup-input">
+                <label for="input-title">Jabatan</label>
+                <input type="text" id="input-title" placeholder="cth: Web Developer" maxlength="25">
+            </div>
+            <div class="grup-input">
+                <label for="input-phone">Nomor Telepon</label>
+                <input type="text" id="input-phone" placeholder="cth: 081234567890">
+            </div>
+            <div class="grup-input">
+                <label for="input-email">Email</label>
+                <input type="text" id="input-email" placeholder="cth: budi.sanjaya@email.com">
+            </div>
         </div>
 
-        <button id="spin-button">Putar!</button>
-        <h2 id="result"></h2>
+        <div class="preview-panel">
+            <h1>Hasil Kartu Nama</h1>
+            <div id="card-preview">
+                <div>
+                    <div id="card-name">Nama Anda</div>
+                    <div id="card-title">Jabatan Anda</div>
+                </div>
+                <div id="card-contact">
+                    <div id="card-phone">Nomor Telepon</div>
+                    <div id="card-email">Email</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('wheel');
-        const ctx = canvas.getContext('2d');
-        const spinButton = document.getElementById('spin-button');
-        const optionsInput = document.getElementById('options-input');
-        const resultEl = document.getElementById('result');
+       
+        const pasanganInputOutput = {
+            'input-name': 'card-name',
+            'input-title': 'card-title',
+            'input-phone': 'card-phone',
+            'input-email': 'card-email'
+        };
 
-        let currentRotation = 0; 
-        let options = [];
+        for (let idInput in pasanganInputOutput) {
+           
+            let inputForm = document.getElementById(idInput);
+            let outputKartu = document.getElementById(pasanganInputOutput[idInput]);
 
-        const colors = ["#3498db", "#2ecc71", "#f1c40f", "#e67e22", "#9b59b6", "#1abc9c"];
+            let teksAwal = outputKartu.textContent;
 
-        function drawWheel() {
-            const numOptions = options.length;
-            const arcSize = numOptions > 0 ? (2 * Math.PI) / numOptions : 0;
-            
-            ctx.clearRect(0, 0, 300, 300);
-            ctx.font = '16px sans-serif';
+            inputForm.addEventListener('input', function () {
+                let isiForm = inputForm.value;
 
-            for (let i = 0; i < numOptions; i++) {
-                const angle = i * arcSize;
-                ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(150, 150);
-                ctx.arc(150, 150, 150, angle, angle + arcSize);
-                ctx.lineTo(150, 150);
-                ctx.fill();
-
-                ctx.save();
-                ctx.fillStyle = 'white';
-                ctx.translate(150 + Math.cos(angle + arcSize / 2) * 100, 150 + Math.sin(angle + arcSize / 2) * 100);
-                ctx.rotate(angle + arcSize / 2 + Math.PI / 2);
-                ctx.fillText(options[i], -ctx.measureText(options[i]).width / 2, 0);
-                ctx.restore();
-            }
+                if (isiForm === '') {
+                    outputKartu.textContent = teksAwal;
+                } else {
+                    outputKartu.textContent = isiForm;
+                }
+            });
         }
 
-        function updateOptions() {
-            const inputVal = optionsInput.value.trim();
-            options = inputVal ? inputVal.split(',').map(item => item.trim()) : [];
-            
-            canvas.style.transition = 'none';
-            canvas.style.transform = 'rotate(0deg)';
-            currentRotation = 0;
-            setTimeout(() => {
-                canvas.style.transition = 'transform 4s ease-out';
-            }, 10);
-
-            drawWheel();
-        }
-
-        spinButton.addEventListener('click', () => {
-            if (options.length < 2) {
-                resultEl.textContent = "Masukkan minimal 2 pilihan!";
-                return;
-            }
-            
-            spinButton.disabled = true;
-            resultEl.textContent = "...";
-     
-            const segmentAngle = 360 / options.length;
-            const landingSegment = Math.floor(Math.random() * options.length);
-            const middleOfSegment = (landingSegment * segmentAngle) + (segmentAngle / 2);
-
-            const currentAngle = currentRotation % 360;
-            const rotationToAdd = (360 * 5) - currentAngle + (270 - middleOfSegment);
-
-            currentRotation += rotationToAdd;
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-
-            setTimeout(() => {
-                resultEl.textContent = `Pilihannya: ${options[landingSegment]}`;
-                spinButton.disabled = false;
-            }, 4100);
-        });
-
-        optionsInput.addEventListener('input', updateOptions);
-        updateOptions();
     </script>
 
 </body>
+
 </html>
